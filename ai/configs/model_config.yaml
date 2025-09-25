@@ -1,0 +1,113 @@
+# Model-specific configurations for different architectures
+
+# ResNet Configurations
+resnet:
+  resnet18:
+    num_features: 512
+    pretrained_weights: "IMAGENET1K_V1"
+    dropout: 0.5
+    classifier_hidden_dims: [512, 128]
+  
+  resnet50:
+    num_features: 2048
+    pretrained_weights: "IMAGENET1K_V2"
+    dropout: 0.5
+    classifier_hidden_dims: [512, 128]
+  
+  resnet101:
+    num_features: 2048
+    pretrained_weights: "IMAGENET1K_V2"
+    dropout: 0.5
+    classifier_hidden_dims: [512, 128]
+
+# DenseNet Configurations
+densenet:
+  densenet121:
+    num_features: 1024
+    pretrained_weights: "IMAGENET1K_V1"
+    dropout: 0.5
+    classifier_hidden_dims: [512, 128]
+  
+  densenet161:
+    num_features: 2208
+    pretrained_weights: "IMAGENET1K_V1"
+    dropout: 0.5
+    classifier_hidden_dims: [512, 128]
+  
+  densenet169:
+    num_features: 1664
+    pretrained_weights: "IMAGENET1K_V1"
+    dropout: 0.5
+    classifier_hidden_dims: [512, 128]
+
+# EfficientNet Configurations
+efficientnet:
+  efficientnet_b0:
+    num_features: 1280
+    pretrained_weights: "IMAGENET1K_V1"
+    dropout: 0.3
+    classifier_hidden_dims: [512, 128]
+  
+  efficientnet_b1:
+    num_features: 1280
+    pretrained_weights: "IMAGENET1K_V1"
+    dropout: 0.3
+    classifier_hidden_dims: [512, 128]
+  
+  efficientnet_b3:
+    num_features: 1536
+    pretrained_weights: "IMAGENET1K_V1"
+    dropout: 0.4
+    classifier_hidden_dims: [512, 128]
+
+# Custom CNN Configuration
+custom_cnn:
+  conv_layers:
+    - {filters: 64, kernel_size: 7, stride: 2, padding: 3}
+    - {filters: 128, kernel_size: 5, stride: 1, padding: 2}
+    - {filters: 256, kernel_size: 3, stride: 1, padding: 1}
+    - {filters: 512, kernel_size: 3, stride: 1, padding: 1}
+    - {filters: 1024, kernel_size: 3, stride: 1, padding: 1}
+  
+  pooling_layers:
+    - {type: "maxpool", kernel_size: 3, stride: 2, padding: 1}
+    - {type: "maxpool", kernel_size: 2, stride: 2}
+    - {type: "maxpool", kernel_size: 2, stride: 2}
+    - {type: "maxpool", kernel_size: 2, stride: 2}
+    - {type: "gap"}  # Global Average Pooling
+  
+  classifier:
+    hidden_dims: [512, 128]
+    dropout: 0.5
+    activation: "relu"
+
+# Training Hyperparameters per Model
+training_hyperparameters:
+  resnet50:
+    learning_rate: 0.001
+    batch_size: 32
+    weight_decay: 0.0001
+    scheduler: "cosine"
+    warmup_epochs: 5
+  
+  densenet121:
+    learning_rate: 0.0005
+    batch_size: 32
+    weight_decay: 0.0001
+    scheduler: "step"
+    step_size: 30
+    gamma: 0.1
+  
+  efficientnet_b0:
+    learning_rate: 0.0005
+    batch_size: 64
+    weight_decay: 0.0001
+    scheduler: "cosine"
+    warmup_epochs: 3
+  
+  custom_cnn:
+    learning_rate: 0.001
+    batch_size: 32
+    weight_decay: 0.0001
+    scheduler: "plateau"
+    patience: 10
