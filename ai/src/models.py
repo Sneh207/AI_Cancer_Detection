@@ -135,13 +135,13 @@ class DenseNetModel(nn.Module):
         else:
             raise ValueError(f"Unsupported architecture: {architecture}")
         
-        # Remove the final classification layer
+        # Remove the final classification layer; torchvision DenseNet forward
+        # will still perform GAP + flatten before calling classifier. By setting
+        # classifier to Identity, the backbone will return a 2D tensor of shape (N, num_features).
         self.backbone.classifier = nn.Identity()
         
-        # Add custom classifier
+        # Add custom classifier for 2D features
         self.classifier = nn.Sequential(
-            nn.AdaptiveAvgPool2d(1),
-            nn.Flatten(),
             nn.Dropout(dropout),
             nn.Linear(num_features, 512),
             nn.ReLU(),
@@ -152,6 +152,7 @@ class DenseNetModel(nn.Module):
         )
         
     def forward(self, x):
+        # Backbone returns 2D features (N, num_features)
         features = self.backbone(x)
         output = self.classifier(features)
         return output
@@ -176,13 +177,12 @@ class EfficientNetModel(nn.Module):
         else:
             raise ValueError(f"Unsupported architecture: {architecture}")
         
-        # Remove the final classification layer
+        # Remove the final classification layer; torchvision EfficientNet forward
+        # returns 2D features (N, num_features) when classifier is Identity.
         self.backbone.classifier = nn.Identity()
         
-        # Add custom classifier
+        # Add custom classifier for 2D features
         self.classifier = nn.Sequential(
-            nn.AdaptiveAvgPool2d(1),
-            nn.Flatten(),
             nn.Dropout(dropout),
             nn.Linear(num_features, 512),
             nn.ReLU(),
@@ -193,6 +193,7 @@ class EfficientNetModel(nn.Module):
         )
         
     def forward(self, x):
+        # Backbone returns 2D features (N, num_features)
         features = self.backbone(x)
         output = self.classifier(features)
         return output

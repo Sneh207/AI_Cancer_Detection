@@ -1,13 +1,13 @@
-# Main training configuration
+# Test configuration for quick validation
 data:
   dataset_path: "data/raw/train_data"
   labels_file: "data/raw/Data_Entry_2017_v2020.csv"
   image_size: 224
-  batch_size: 32
-  num_workers: 0
-  train_split: 0.7
-  val_split: 0.15
-  test_split: 0.15
+  batch_size: 2  # Small batch for testing
+  num_workers: 0  # Avoid multiprocessing issues on Windows
+  train_split: 0.6
+  val_split: 0.2
+  test_split: 0.2
   
 # Data augmentation parameters
 augmentation:
@@ -19,18 +19,18 @@ augmentation:
   
 # Training parameters
 training:
-  epochs: 100
+  epochs: 2  # Just 2 epochs for testing
   learning_rate: 0.001
   weight_decay: 0.0001
   optimizer: "adam"
   scheduler: "cosine"
-  early_stopping_patience: 15
+  early_stopping_patience: 5
   save_best_only: true
   
 # Model parameters
 model:
-  architecture: "resnet50"  # Options: resnet50, densenet121, custom_cnn
-  pretrained: true
+  architecture: "custom_cnn"  # Use custom CNN for faster testing
+  pretrained: false  # No pretrained weights for testing
   num_classes: 1  # Binary classification
   dropout: 0.5
   

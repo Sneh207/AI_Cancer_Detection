@@ -13,8 +13,10 @@ import torch
 import warnings
 from pathlib import Path
 
-# Add src to path
-sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+# Ensure project root (containing the 'src' package) is on sys.path
+PROJECT_ROOT = os.path.dirname(__file__)
+if PROJECT_ROOT not in sys.path:
+    sys.path.append(PROJECT_ROOT)
 
 from src.data_loader import DataManager
 from src.models import get_model, get_model_summary
@@ -98,7 +100,7 @@ def train_model(args):
     
     # Set up experiment directory
     exp_dir = create_experiment_directory(
-        'experiments', 
+        os.path.join(PROJECT_ROOT, 'experiments'), 
         args.experiment_name or f"{config['model']['architecture']}_training"
     )
     
@@ -168,7 +170,7 @@ def evaluate_model(args):
     device = setup_device(args.device)
     
     # Set up results directory
-    results_dir = args.output or os.path.join('experiments', 'evaluation_results')
+    results_dir = args.output or os.path.join(PROJECT_ROOT, 'experiments', 'evaluation_results')
     os.makedirs(results_dir, exist_ok=True)
     
     # Initialize data manager and get test loader
@@ -224,7 +226,7 @@ def run_inference(args):
         inference_pipeline.threshold = args.threshold
         print(f"Using custom threshold: {args.threshold}")
     
-    results_dir = args.output or 'experiments/inference_results'
+    results_dir = args.output or os.path.join(PROJECT_ROOT, 'experiments', 'inference_results')
     os.makedirs(results_dir, exist_ok=True)
     
     if args.image:
@@ -258,8 +260,8 @@ def run_inference(args):
         # Batch inference
         print(f"Processing batch from directory: {args.batch_images}")
         
-        # Get all image files in directory
-        image_extensions = {'.jpg', '.jpeg', '.png', '.dcm', '.dicom'}
+        # Get all image files in directory (standard formats only)
+        image_extensions = {'.jpg', '.jpeg', '.png'}
         image_paths = []
         
         for ext in image_extensions:
@@ -306,7 +308,7 @@ def run_demo(args):
         return
     
     # Look for sample images in data directory
-    sample_dir = 'data/sample_images'
+    sample_dir = os.path.join(PROJECT_ROOT, 'data', 'sample_images')
     if not os.path.exists(sample_dir):
         print(f"Creating sample directory: {sample_dir}")
         os.makedirs(sample_dir, exist_ok=True)
@@ -316,7 +318,7 @@ def run_demo(args):
     # Set demo arguments
     args.batch_images = sample_dir
     args.visualize = True
-    args.output = 'experiments/demo_results'
+    args.output = os.path.join(PROJECT_ROOT, 'experiments', 'demo_results')
     
     print(f"Running demo with images from: {sample_dir}")
     run_inference(args)
@@ -328,13 +330,10 @@ def main():
     try:
         if args.mode == 'train':
             train_model(args)
-        
         elif args.mode == 'evaluate':
             evaluate_model(args)
-        
         elif args.mode == 'inference':
             run_inference(args)
-        
         elif args.mode == 'demo':
             run_demo(args)
         

@@ -4,7 +4,10 @@ Unit tests for model architectures
 
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
+# Ensure project root (ai/) is on sys.path so 'src' package resolves
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if PROJECT_ROOT not in sys.path:
+    sys.path.append(PROJECT_ROOT)
 
 import unittest
 import torch

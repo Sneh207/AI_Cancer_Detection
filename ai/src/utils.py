@@ -63,7 +63,6 @@ def save_checkpoint(state, is_best, checkpoint_dir, filename='checkpoint.pth'):
     
     filepath = os.path.join(checkpoint_dir, filename)
     torch.save(state, filepath)
-    
     if is_best:
         best_filepath = os.path.join(checkpoint_dir, 'best_model.pth')
         torch.save(state, best_filepath)
@@ -86,15 +85,39 @@ def load_checkpoint(checkpoint_path, model, optimizer=None, scheduler=None):
     if not os.path.exists(checkpoint_path):
         raise FileNotFoundError(f"Checkpoint not found: {checkpoint_path}")
     
-    checkpoint = torch.load(checkpoint_path, map_location='cpu')
+    try:
+        checkpoint = torch.load(checkpoint_path, map_location='cpu', weights_only=False)
+    except Exception as e:
+        print(f"Error loading checkpoint with weights_only=False: {e}")
+        try:
+            checkpoint = torch.load(checkpoint_path, map_location='cpu')
+        except Exception as e2:
+            print(f"Error loading checkpoint: {e2}")
+            raise e2
     
-    model.load_state_dict(checkpoint['model_state_dict'])
+    try:
+        model.load_state_dict(checkpoint['model_state_dict'])
+    except Exception as e:
+        print(f"Error loading model state dict: {e}")
+        # Try to load with strict=False
+        try:
+            model.load_state_dict(checkpoint['model_state_dict'], strict=False)
+            print("Loaded model state dict with strict=False")
+        except Exception as e2:
+            print(f"Failed to load model state dict even with strict=False: {e2}")
+            raise e2
     
     if optimizer and 'optimizer_state_dict' in checkpoint:
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        try:
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        except Exception as e:
+            print(f"Warning: Could not load optimizer state dict: {e}")
     
     if scheduler and 'scheduler_state_dict' in checkpoint and checkpoint['scheduler_state_dict']:
-        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        try:
+            scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        except Exception as e:
+            print(f"Warning: Could not load scheduler state dict: {e}")
     
     epoch = checkpoint.get('epoch', 0)
     best_loss = checkpoint.get('val_loss', float('inf'))
@@ -432,10 +455,19 @@ def get_device_info():
     }
     
     if torch.cuda.is_available():
-        device_info['cuda_device_name'] = torch.cuda.get_device_name(0)
-        device_info['cuda_memory_total'] = torch.cuda.get_device_properties(0).total_memory
-        device_info['cuda_memory_cached'] = torch.cuda.memory_cached(0)
-        device_info['cuda_memory_allocated'] = torch.cuda.memory_allocated(0)
+        device = torch.cuda.current_device()
+        props = torch.cuda.get_device_properties(device)
+        device_info['cuda_device_name'] = props.name
+        device_info['cuda_memory_total'] = props.total_memory
+        # Use non-deprecated memory APIs
+        try:
+            device_info['cuda_memory_reserved'] = torch.cuda.memory_reserved(device)
+        except Exception:
+            device_info['cuda_memory_reserved'] = None
+        try:
+            device_info['cuda_memory_allocated'] = torch.cuda.memory_allocated(device)
+        except Exception:
+            device_info['cuda_memory_allocated'] = None
     
     return device_info
 
@@ -450,10 +482,16 @@ def print_device_info():
     
     if info['cuda_available']:
         print(f"CUDA Device Count: {info['cuda_device_count']}")
-        print(f"CUDA Device Name: {info['cuda_device_name']}")
-        print(f"Total Memory: {info['cuda_memory_total'] / 1024**3:.1f} GB")
-        print(f"Cached Memory: {info['cuda_memory_cached'] / 1024**3:.1f} GB")
-        print(f"Allocated Memory: {info['cuda_memory_allocated'] / 1024**3:.1f} GB")
+        print(f"CUDA Device Name: {info.get('cuda_device_name', 'Unknown')}")
+        total_mem = info.get('cuda_memory_total')
+        if total_mem is not None:
+            print(f"Total Memory: {total_mem / 1024**3:.1f} GB")
+        reserved = info.get('cuda_memory_reserved')
+        if reserved is not None:
+            print(f"Reserved Memory: {reserved / 1024**3:.1f} GB")
+        allocated = info.get('cuda_memory_allocated')
+        if allocated is not None:
+            print(f"Allocated Memory: {allocated / 1024**3:.1f} GB")
     
     print(f"Using Device: {info['current_device']}")
     print("=" * 50)

@@ -86,8 +86,13 @@ class DataManager:
     """
     def __init__(self, config):
         self.config = config
-        self.dataset_path = config['data']['dataset_path']
-        self.labels_file = config['data']['labels_file']
+        # Base dir is the project root (ai/), which is parent of this file's directory
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        dataset_path = config['data']['dataset_path']
+        labels_file = config['data']['labels_file']
+        # Resolve to absolute paths if relative
+        self.dataset_path = dataset_path if os.path.isabs(dataset_path) else os.path.join(base_dir, dataset_path)
+        self.labels_file = labels_file if os.path.isabs(labels_file) else os.path.join(base_dir, labels_file)
         self.image_size = config['data']['image_size']
         self.batch_size = config['data']['batch_size']
         self.num_workers = config['data']['num_workers']
@@ -107,11 +112,24 @@ class DataManager:
             lambda x: 1 if any(label in x for label in cancer_labels) else 0
         )
         
+        # Build correct image paths - images are in train/ subdirectory
+        train_subdir = os.path.join(self.dataset_path, 'train')
+        if os.path.exists(train_subdir):
+            # Images are in dataset_path/train/
+            df['image_path'] = df['Image Index'].apply(
+                lambda x: os.path.join(train_subdir, x)
+            )
+        else:
+            # Images are directly in dataset_path
+            df['image_path'] = df['Image Index'].apply(
+                lambda x: os.path.join(self.dataset_path, x)
+            )
+        
         # Filter out images that don't exist
-        df['image_path'] = df['Image Index'].apply(
-            lambda x: os.path.join(self.dataset_path, x)
-        )
         df = df[df['image_path'].apply(os.path.exists)]
+        
+        print(f"Found {len(df)} valid images")
+        print(f"Cancer cases: {df['cancer'].sum()} ({df['cancer'].mean()*100:.1f}%)")
         
         return df['image_path'].values, df['cancer'].values
     
@@ -119,20 +137,46 @@ class DataManager:
         """
         Split data into train, validation, and test sets
         """
+        # Check if we have enough samples for stratified splitting
+        unique, counts = np.unique(labels, return_counts=True)
+        min_class_count = np.min(counts)
+        
+        test_size = self.config['data']['test_split']
+        val_size = self.config['data']['val_split']
+        
+        # Calculate minimum samples needed for stratified split
+        min_test_samples = int(test_size * len(labels))
+        min_val_samples = int(val_size * len(labels))
+        
+        # Use stratify only if we have enough samples in each class
+        use_stratify = min_class_count >= max(2, min_test_samples, min_val_samples)
+        
+        if not use_stratify:
+            print(f"Warning: Using random split instead of stratified (min class count: {min_class_count})")
+        
         # First split: train+val, test
         X_temp, X_test, y_temp, y_test = train_test_split(
             image_paths, labels, 
-            test_size=self.config['data']['test_split'],
-            stratify=labels, 
+            test_size=test_size,
+            stratify=labels if use_stratify else None, 
             random_state=42
         )
         
         # Second split: train, val
-        val_size = self.config['data']['val_split'] / (1 - self.config['data']['test_split'])
+        val_size_adjusted = val_size / (1 - test_size)
+        
+        # Check again for validation split
+        if use_stratify:
+            unique_temp, counts_temp = np.unique(y_temp, return_counts=True)
+            min_class_count_temp = np.min(counts_temp)
+            use_stratify_val = min_class_count_temp >= max(2, int(val_size_adjusted * len(y_temp)))
+        else:
+            use_stratify_val = False
+            
         X_train, X_val, y_train, y_val = train_test_split(
             X_temp, y_temp,
-            test_size=val_size,
-            stratify=y_temp,
+            test_size=val_size_adjusted,
+            stratify=y_temp if use_stratify_val else None,
             random_state=42
         )
         
