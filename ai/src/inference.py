@@ -17,7 +17,6 @@ class CancerDetectionInference:
     def __init__(self, model_path, config_path=None, device=None):
         """
         Initialize inference pipeline
-        
         Args:
             model_path: Path to saved model checkpoint
             config_path: Path to model configuration file
@@ -25,8 +24,8 @@ class CancerDetectionInference:
         """
         self.device = device or torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
-        # Load checkpoint
-        checkpoint = torch.load(model_path, map_location=self.device)
+        # Load checkpoint (weights_only=False for compatibility with older checkpoints)
+        checkpoint = torch.load(model_path, map_location=self.device, weights_only=False)
         
         # Load config
         if config_path:
@@ -119,15 +118,15 @@ class CancerDetectionInference:
         
         inference_time = time.time() - start_time
         
-        # Prepare result
+        # Prepare result (convert to native Python types for JSON serialization)
         result = {
             'image_path': image_path,
-            'probability': probability,
-            'prediction': prediction,
+            'probability': float(probability),
+            'prediction': int(prediction),
             'prediction_label': 'Cancer' if prediction == 1 else 'No Cancer',
-            'confidence': max(probability, 1 - probability),
-            'threshold': self.threshold,
-            'inference_time': inference_time
+            'confidence': float(max(probability, 1 - probability)),
+            'threshold': float(self.threshold),
+            'inference_time': float(inference_time)
         }
         
         # Generate Grad-CAM if requested
@@ -224,22 +223,20 @@ class CancerDetectionInference:
             'prediction_results': {
                 'probability': result['probability'],
                 'prediction': result['prediction_label'],
-                'confidence': result['confidence'],
-                'threshold_used': result['threshold'],
-                'inference_time_seconds': result['inference_time']
+                'confidence': float(result['confidence']),
+                'threshold_used': float(result['threshold']),
+                'inference_time_seconds': float(result['inference_time'])
             },
             'model_attention_analysis': {
-                'focus_percentage': analysis['focus_percentage'],
-                'center_of_focus_normalized': analysis['center_of_focus'],
-                'max_attention_score': analysis['max_attention'],
-                'mean_attention_score': analysis['mean_attention'],
-                'attention_variability': analysis['attention_std']
+                'focus_percentage': float(analysis['focus_percentage']) if isinstance(analysis['focus_percentage'], (np.floating, np.integer)) else analysis['focus_percentage'],
+                'center_of_focus_normalized': [float(x) if isinstance(x, (np.floating, np.integer)) else x for x in analysis['center_of_focus']],
+                'max_attention_score': float(analysis['max_attention']) if isinstance(analysis['max_attention'], (np.floating, np.integer)) else analysis['max_attention'],
+                'mean_attention_score': float(analysis['mean_attention']) if isinstance(analysis['mean_attention'], (np.floating, np.integer)) else analysis['mean_attention'],
+                'attention_variability': float(analysis['attention_std']) if isinstance(analysis['attention_std'], (np.floating, np.integer)) else analysis['attention_std']
             },
             'clinical_interpretation': self._generate_clinical_interpretation(result, analysis),
             'recommendations': self._generate_recommendations(result)
         }
-        
-        # Save report if requested
         if save_path:
             import json
             with open(save_path, 'w') as f:

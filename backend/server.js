@@ -136,9 +136,9 @@ app.post('/predict', upload.single('image'), async (req, res) => {
     
     // Default paths - adjust these based on your setup
     const checkpointPath = process.env.CHECKPOINT_PATH || 
-      path.join(__dirname, 'ai', 'experiments', 'best_model', 'checkpoints', 'best_model.pth');
+      path.join(__dirname, '..', 'ai', 'experiments', 'test_run_fixed_20250928_224821', 'checkpoints', 'best_model.pth');
     const configPath = process.env.CONFIG_PATH || 
-      path.join(__dirname, 'ai', 'configs', 'config.yaml');
+      path.join(__dirname, '..', 'ai', 'configs', 'config.yaml');
 
     // Check if checkpoint exists
     try {
@@ -200,9 +200,9 @@ app.post('/predict-batch', upload.array('images', 10), async (req, res) => {
     }
 
     const checkpointPath = process.env.CHECKPOINT_PATH || 
-      path.join(__dirname, 'ai', 'experiments', 'best_model', 'checkpoints', 'best_model.pth');
+      path.join(__dirname, '..', 'ai', 'experiments', 'test_run_fixed_20250928_224821', 'checkpoints', 'best_model.pth');
     const configPath = process.env.CONFIG_PATH || 
-      path.join(__dirname, 'ai', 'configs', 'config.yaml');
+      path.join(__dirname, '..', 'ai', 'configs', 'config.yaml');
 
     const results = [];
 
@@ -246,7 +246,7 @@ app.post('/predict-batch', upload.array('images', 10), async (req, res) => {
 // Status endpoint
 app.get('/status', async (req, res) => {
   const checkpointPath = process.env.CHECKPOINT_PATH || 
-    path.join(__dirname, 'ai', 'experiments', 'best_model', 'checkpoints', 'best_model.pth');
+    path.join(__dirname, '..', 'ai', 'experiments', 'test_run_fixed_20250928_224821', 'checkpoints', 'best_model.pth');
   
   let modelAvailable = false;
   try {
