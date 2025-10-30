@@ -111,3 +111,10 @@ training_hyperparameters:
     weight_decay: 0.0001
     scheduler: "plateau"
     patience: 10
+
+# Add explicit checkpoint locations (local path or http(s) URL)
+checkpoints:
+  resnet50: "ai/checkpoints/resnet50_best.pth"
+  densenet121: "ai/checkpoints/densenet121_best.pth"
+  efficientnet_b0: "ai/checkpoints/efficientnet_b0_best.pth"
+  custom_cnn: null

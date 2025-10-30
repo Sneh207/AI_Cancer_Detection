@@ -1,0 +1,51 @@
+# Quick Test Training Configuration (5 epochs for testing)
+data:
+  dataset_path: "data/raw/train_data"
+  labels_file: "data/raw/Data_Entry_2017_v2020.csv"
+  image_size: 224
+  batch_size: 16  # Reduced for faster training
+  num_workers: 0
+  train_split: 0.7
+  val_split: 0.15
+  test_split: 0.15
+  
+# Data augmentation parameters
+augmentation:
+  horizontal_flip: 0.5
+  rotation_range: 15
+  brightness: 0.2
+  contrast: 0.2
+  zoom_range: 0.1
+  
+# Training parameters
+training:
+  epochs: 5  # Quick test - only 5 epochs
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  optimizer: "adam"
+  scheduler: "cosine"
+  early_stopping_patience: 3
+  save_best_only: true
+  
+# Model parameters
+model:
+  architecture: "custom_cnn"  # Options: resnet50, densenet121, custom_cnn
+  pretrained: true
+  num_classes: 1  # Binary classification
+  dropout: 0.5
+  
+# Loss function
+loss:
+  type: "bce"  # binary cross entropy
+  pos_weight: 2.0  # Weight for positive class (cancer)
+  
+# Evaluation
+evaluation:
+  threshold: 0.5
+  metrics: ["accuracy", "precision", "recall", "f1", "auc"]
+  
+# Paths
+paths:
+  checkpoints: "experiments/checkpoints"
+  logs: "experiments/logs"
+  results: "experiments/results"

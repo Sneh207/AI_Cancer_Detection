@@ -1,3 +1,6 @@
+// Load environment variables
+require('dotenv').config();
+
 const express = require('express');
 const multer = require('multer');
 const cors = require('cors');
@@ -6,7 +9,7 @@ const fs = require('fs').promises;
 const { spawn } = require('child_process');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
@@ -57,7 +60,8 @@ function runPythonInference(imagePath, checkpointPath, configPath) {
       '--config', configPath,
       '--checkpoint', checkpointPath,
       '--image', imagePath,
-      '--device', 'auto'
+      '--device', 'auto',
+      '--visualize'  // Enable Grad-CAM generation
     ]);
 
     let outputData = '';
@@ -87,7 +91,8 @@ function parsePythonOutput(output) {
   const result = {
     prediction: 'Unknown',
     probability: 0,
-    confidence: 0
+    confidence: 0,
+    gradcamPath: null
   };
 
   lines.forEach(line => {
@@ -102,6 +107,10 @@ function parsePythonOutput(output) {
     if (line.includes('Confidence:')) {
       const match = line.match(/Confidence:\s*([\d.]+)/);
       if (match) result.confidence = parseFloat(match[1]);
+    }
+    if (line.includes('Visualization saved:')) {
+      const match = line.match(/Visualization saved:\s*(.+)/);
+      if (match) result.gradcamPath = match[1].trim();
     }
   });
 
@@ -136,7 +145,7 @@ app.post('/predict', upload.single('image'), async (req, res) => {
     
     // Default paths - adjust these based on your setup
     const checkpointPath = process.env.CHECKPOINT_PATH || 
-      path.join(__dirname, '..', 'ai', 'experiments', 'test_run_fixed_20250928_224821', 'checkpoints', 'best_model.pth');
+      path.join(__dirname, '..', 'ai', 'experiments', 'resnet50_training_20251022_092057', 'checkpoints', 'best_model.pth');
     const configPath = process.env.CONFIG_PATH || 
       path.join(__dirname, '..', 'ai', 'configs', 'config.yaml');
 
@@ -147,7 +156,14 @@ app.post('/predict', upload.single('image'), async (req, res) => {
       await fs.unlink(imagePath); // Clean up uploaded file
       return res.status(500).json({ 
         error: 'Model checkpoint not found',
-        message: 'Please train a model first or specify CHECKPOINT_PATH environment variable'
+        message: 'Please train a model first or specify CHECKPOINT_PATH environment variable',
+        expectedPath: checkpointPath,
+        solution: 'See MODEL_SETUP.md for detailed instructions on setting up the model',
+        quickFix: [
+          '1. Train a model: cd ai && python main.py train --config configs/config.yaml',
+          '2. Or set CHECKPOINT_PATH environment variable to your model location',
+          '3. Or place your model at: ' + checkpointPath
+        ]
       });
     }
 
@@ -155,6 +171,19 @@ app.post('/predict', upload.single('image'), async (req, res) => {
     console.log(`Processing image: ${imagePath}`);
     const output = await runPythonInference(imagePath, checkpointPath, configPath);
     const result = parsePythonOutput(output);
+
+    // Read Grad-CAM image if generated
+    let gradcamBase64 = null;
+    if (result.gradcamPath) {
+      try {
+        const gradcamData = await fs.readFile(result.gradcamPath);
+        gradcamBase64 = `data:image/png;base64,${gradcamData.toString('base64')}`;
+        // Clean up Grad-CAM file
+        await fs.unlink(result.gradcamPath);
+      } catch (error) {
+        console.error('Error reading Grad-CAM:', error);
+      }
+    }
 
     // Clean up uploaded file
     await fs.unlink(imagePath);
@@ -165,8 +194,9 @@ app.post('/predict', upload.single('image'), async (req, res) => {
         prediction: result.prediction,
         probability: result.probability,
         confidence: result.confidence,
+        gradcamImage: gradcamBase64,
         message: result.prediction === 'Cancer' 
-          ? 'Cancer detected - Please consult a medical professional' 
+          ? 'Cancer detected - Please consult a medical professional immediately' 
           : 'No cancer detected - Routine follow-up recommended'
       },
       timestamp: new Date().toISOString()
@@ -200,7 +230,7 @@ app.post('/predict-batch', upload.array('images', 10), async (req, res) => {
     }
 
     const checkpointPath = process.env.CHECKPOINT_PATH || 
-      path.join(__dirname, '..', 'ai', 'experiments', 'test_run_fixed_20250928_224821', 'checkpoints', 'best_model.pth');
+      path.join(__dirname, '..', 'ai', 'experiments', 'resnet50_training_20251022_092057', 'checkpoints', 'best_model.pth');
     const configPath = process.env.CONFIG_PATH || 
       path.join(__dirname, '..', 'ai', 'configs', 'config.yaml');
 
@@ -246,7 +276,7 @@ app.post('/predict-batch', upload.array('images', 10), async (req, res) => {
 // Status endpoint
 app.get('/status', async (req, res) => {
   const checkpointPath = process.env.CHECKPOINT_PATH || 
-    path.join(__dirname, '..', 'ai', 'experiments', 'test_run_fixed_20250928_224821', 'checkpoints', 'best_model.pth');
+    path.join(__dirname, '..', 'ai', 'experiments', 'resnet50_training_20251022_092057', 'checkpoints', 'best_model.pth');
   
   let modelAvailable = false;
   try {

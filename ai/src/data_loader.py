@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from PIL import Image
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 from torchvision import transforms
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
@@ -99,37 +99,42 @@ class DataManager:
         
     def prepare_labels(self):
         """
-        Process NIH ChestX-ray14 labels to binary cancer/no-cancer classification
+        Process labels to binary cancer/no-cancer classification
         """
         # Load the CSV file
         df = pd.read_csv(self.labels_file)
         
-        # Define cancer-related findings
-        cancer_labels = ['Mass', 'Nodule']
+        # Get column names from config or use defaults
+        image_col = self.config['data'].get('image_column', 'Image Index')
+        label_col = self.config['data'].get('label_column', 'BinaryLabel')
         
-        # Create binary labels
-        df['cancer'] = df['Finding Labels'].apply(
-            lambda x: 1 if any(label in x for label in cancer_labels) else 0
-        )
+        print(f"Using image column: '{image_col}'")
+        print(f"Using label column: '{label_col}'")
         
-        # Build correct image paths - images are in train/ subdirectory
-        train_subdir = os.path.join(self.dataset_path, 'train')
-        if os.path.exists(train_subdir):
-            # Images are in dataset_path/train/
-            df['image_path'] = df['Image Index'].apply(
-                lambda x: os.path.join(train_subdir, x)
-            )
+        # Check if BinaryLabel column exists
+        if label_col in df.columns:
+            # Use existing binary labels from CSV
+            df['cancer'] = df[label_col].apply(lambda x: 1 if x == 'Cancer' else 0)
+            print(f"Using existing binary labels from '{label_col}' column")
         else:
-            # Images are directly in dataset_path
-            df['image_path'] = df['Image Index'].apply(
-                lambda x: os.path.join(self.dataset_path, x)
+            # Fallback: Create binary labels from Finding Labels
+            print(f"'{label_col}' column not found, creating labels from 'Finding Labels'")
+            cancer_labels = ['Mass', 'Nodule']
+            df['cancer'] = df['Finding Labels'].apply(
+                lambda x: 1 if any(label in str(x) for label in cancer_labels) else 0
             )
+        
+        # Build correct image paths
+        df['image_path'] = df[image_col].apply(
+            lambda x: os.path.join(self.dataset_path, x)
+        )
         
         # Filter out images that don't exist
         df = df[df['image_path'].apply(os.path.exists)]
         
         print(f"Found {len(df)} valid images")
         print(f"Cancer cases: {df['cancer'].sum()} ({df['cancer'].mean()*100:.1f}%)")
+        print(f"No Cancer cases: {(df['cancer']==0).sum()} ({(df['cancer']==0).mean()*100:.1f}%)")
         
         return df['image_path'].values, df['cancer'].values
     
@@ -216,10 +221,25 @@ class DataManager:
             image_size=self.image_size
         )
         
+        # Calculate class weights for balanced sampling
+        class_counts = np.bincount(y_train.astype(int))
+        class_weights = 1.0 / class_counts
+        sample_weights = class_weights[y_train.astype(int)]
+        
+        # Create weighted sampler for training
+        sampler = WeightedRandomSampler(
+            weights=sample_weights,
+            num_samples=len(sample_weights),
+            replacement=True
+        )
+        
+        print(f"Using WeightedRandomSampler for balanced training")
+        print(f"Class weights: Cancer={class_weights[1]:.4f}, No Cancer={class_weights[0]:.4f}")
+        
         # Create data loaders
         train_loader = DataLoader(
             train_dataset, batch_size=self.batch_size,
-            shuffle=True, num_workers=self.num_workers,
+            sampler=sampler, num_workers=self.num_workers,
             pin_memory=True, drop_last=True
         )
         

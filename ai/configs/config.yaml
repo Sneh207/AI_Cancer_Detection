@@ -1,9 +1,11 @@
 # Main training configuration
 data:
-  dataset_path: "data/raw/train_data"
-  labels_file: "data/raw/Data_Entry_2017_v2020.csv"
+  dataset_path: "data/raw/train_data/train"
+  labels_file: "data/raw/ChestXray_Binary_Labels.csv"
+  image_column: "Image Index"
+  label_column: "BinaryLabel"
   image_size: 224
-  batch_size: 32
+  batch_size: 16
   num_workers: 0
   train_split: 0.7
   val_split: 0.15
@@ -19,8 +21,8 @@ augmentation:
   
 # Training parameters
 training:
-  epochs: 100
-  learning_rate: 0.001
+  epochs: 50
+  learning_rate: 0.0001
   weight_decay: 0.0001
   optimizer: "adam"
   scheduler: "cosine"
@@ -29,7 +31,7 @@ training:
   
 # Model parameters
 model:
-  architecture: "custom_cnn"  # Options: resnet50, densenet121, custom_cnn
+  architecture: "resnet50"  # Options: resnet50, densenet121, efficientnet, custom_cnn
   pretrained: true
   num_classes: 1  # Binary classification
   dropout: 0.5
@@ -37,7 +39,7 @@ model:
 # Loss function
 loss:
   type: "bce"  # binary cross entropy
-  pos_weight: 2.0  # Weight for positive class (cancer)
+  pos_weight: 4.4  # Weight for positive class (cancer)
   
 # Evaluation
 evaluation:

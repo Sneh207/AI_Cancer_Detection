@@ -1,0 +1,45 @@
+============================================================
+FILES TO DELETE - Unnecessary Documentation and Scripts
+============================================================
+
+UNNECESSARY DOCUMENTATION (Created during troubleshooting):
+-----------------------------------------------------------
+❌ CHECKPOINT_SETUP_COMPLETE.md
+❌ DOWNLOAD_MODEL.md
+❌ FIX_CHECKPOINT_ERROR.bat
+❌ FIX_CHECKPOINT_ERROR.ps1
+❌ FIX_INSTRUCTIONS.md
+❌ README_CHECKPOINT_FIX.md
+❌ START_SERVERS.md
+
+DUMMY MODEL SCRIPTS (Not needed with real model):
+-----------------------------------------------------------
+❌ ai/create_dummy_checkpoint.py
+❌ ai/test_model.py
+
+KEEP THESE IMPORTANT FILES:
+-----------------------------------------------------------
+✅ README.md - Main project documentation
+✅ MODEL_SETUP.md - Model setup guide
+✅ TRAINING_GUIDE.md - Complete training guide
+✅ QUICK_TRAINING_STEPS.md - Quick reference
+✅ check_setup.py - Setup verification tool
+✅ FINAL_SETUP.md - This final setup guide
+✅ CLEANUP_AND_FIX.bat - Cleanup script
+
+YOUR .ENV FILE ISSUE:
+-----------------------------------------------------------
+Current (WRONG):
+  CHECKPOINT_PATH=../ai/experiments/best_model/checkpoints/best_model.pth
+
+Should be (CORRECT):
+  CHECKPOINT_PATH=../ai/experiments/test_run_fixed_20250928_224821/checkpoints/best_model.pth
+
+SOLUTION:
+-----------------------------------------------------------
+Run: CLEANUP_AND_FIX.bat
+
+This will:
+1. Delete all unnecessary files listed above
+2. Fix your .env files with correct paths
+3. Configure system to use your REAL trained model
