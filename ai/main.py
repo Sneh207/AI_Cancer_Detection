@@ -181,7 +181,7 @@ def evaluate_model(args):
     print(f"Loading model from: {args.checkpoint}")
     model = get_model(config)
     
-    checkpoint = torch.load(args.checkpoint, map_location=device)
+    checkpoint = torch.load(args.checkpoint, map_location=device, weights_only=False)
     model.load_state_dict(checkpoint['model_state_dict'])
     model.to(device)
     

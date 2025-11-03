@@ -252,8 +252,26 @@ class ModelEvaluator:
         }
         
         import json
+        import numpy as np
+        
+        # Convert numpy types to Python native types for JSON serialization
+        def convert_to_native(obj):
+            if isinstance(obj, (np.integer, np.int64, np.int32)):
+                return int(obj)
+            elif isinstance(obj, (np.floating, np.float64, np.float32)):
+                return float(obj)
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif isinstance(obj, dict):
+                return {k: convert_to_native(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_to_native(item) for item in obj]
+            return obj
+        
+        results_native = convert_to_native(results)
+        
         with open(os.path.join(self.save_path, 'evaluation_results.json'), 'w') as f:
-            json.dump(results, f, indent=2)
+            json.dump(results_native, f, indent=2)
         
         print(f"\nResults saved to: {self.save_path}")
         

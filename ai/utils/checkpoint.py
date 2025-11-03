@@ -2,6 +2,8 @@ import os
 try:
     import torch
 except Exception:
+    torch = None
+
 def load_checkpoint_if_available(model, ckpt_path, map_location=None, strict=True):
     """
     Try to load a checkpoint. If missing, return False (caller can use pretrained weights).
@@ -31,7 +33,7 @@ def load_checkpoint_if_available(model, ckpt_path, map_location=None, strict=Tru
         return False
 
     try:
-        state = torch.load(ckpt_path, map_location=map_location or torch.device("cpu"))
+        state = torch.load(ckpt_path, map_location=map_location or torch.device("cpu"), weights_only=False)
         if "state_dict" in state:
             state = state["state_dict"]
         # optional compatibility sanitizing can be done here
