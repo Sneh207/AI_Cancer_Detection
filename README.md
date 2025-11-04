@@ -831,8 +831,8 @@ MIT License - See LICENSE file for details.
 - **Arpit Bhardwaj** - Full-stack Development, System Integration
 
 **Course:** CSET211 - Statistical Machine Learning  
-**Institution:** Chitkara University  
-**Supervisor:** [Supervisor Name]
+**Institution:** Bennett University  
+**Supervisor:** [Dr. Nitin Arvind Shelke]
 
 **Acknowledgments:**
 - NIH Chest X-ray Dataset
