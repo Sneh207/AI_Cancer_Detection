@@ -298,8 +298,8 @@ const UploadSection = ({ onAnalyze, loading, error }) => {
             {/* Stats */}
             <div className="grid grid-cols-2 gap-4">
               {[
-                { value: '95%', label: 'Accuracy', color: 'from-green-500 to-emerald-500' },
-                { value: '<2s', label: 'Analysis Time', color: 'from-blue-500 to-cyan-500' },
+                { value: '96%', label: 'Accuracy', color: 'from-green-500 to-emerald-500' },
+                { value: '<5m', label: 'Analysis Time', color: 'from-blue-500 to-cyan-500' },
               ].map((stat, index) => (
                 <motion.div
                   key={stat.label}

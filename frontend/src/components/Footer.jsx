@@ -4,8 +4,8 @@ import { Heart, Github, Linkedin, Mail, Twitter } from 'lucide-react';
 
 const Footer = () => {
   const socialLinks = [
-    { icon: Github, href: '#', label: 'GitHub', color: 'hover:text-gray-900 dark:hover:text-white' },
-    { icon: Linkedin, href: '#', label: 'LinkedIn', color: 'hover:text-blue-600' },
+    { icon: Github, href: 'https://github.com/Arpit-desgin', label: 'GitHub', color: 'hover:text-gray-900 dark:hover:text-white' },
+    { icon: Linkedin, href: 'https://www.linkedin.com/in/arpit-bhardwaj-9a499631a/', label: 'LinkedIn', color: 'hover:text-blue-600' },
     { icon: Twitter, href: '#', label: 'Twitter', color: 'hover:text-blue-400' },
     { icon: Mail, href: '#', label: 'Email', color: 'hover:text-red-500' },
   ];
@@ -107,7 +107,7 @@ const Footer = () => {
               ))}
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Email: contact@cancerdetection.ai
+              Email: bhardwajarpit507@gmail.com
             </p>
           </motion.div>
         </div>

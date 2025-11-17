@@ -118,7 +118,7 @@ const HeroSection = ({ onGetStarted }) => {
             {[
               { icon: Shield, text: 'HIPAA Compliant', color: 'from-green-500 to-emerald-500' },
               { icon: Zap, text: 'Instant Results', color: 'from-yellow-500 to-orange-500' },
-              { icon: Sparkles, text: '95% Accuracy', color: 'from-purple-500 to-pink-500' },
+              { icon: Sparkles, text: '96% Accuracy', color: 'from-purple-500 to-pink-500' },
             ].map((feature, index) => (
               <motion.div
                 key={feature.text}

@@ -31,7 +31,7 @@ training:
   
 # Model parameters
 model:
-  architecture: "densenet169"  # Options: resnet50, densenet121, densenet169, efficientnet, custom_cnn
+  architecture: "resnet50"  # Options: resnet50, densenet121, densenet169, efficientnet, custom_cnn
   pretrained: true
   num_classes: 1  # Binary classification
   dropout: 0.5
